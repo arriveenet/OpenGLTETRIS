@@ -1,0 +1,198 @@
+#include "font.h"
+#include "Texture.h"
+#include "tetris.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <gl/glut.h>
+#include <glm/glm.hpp>
+#include <time.h>
+
+using namespace glm;
+
+// Font texture
+static Texture texture;
+static GLuint texId;
+
+// Font Internal variables
+static GLint lastMatrixMode;
+static ivec2 screenSize;
+static vec2 size;
+static float scale;
+static vec2 position;
+static vec2 origin;
+
+static GLfloat vertex[8];
+static GLfloat texCoord[8];
+
+static GLubyte indices[6] = {
+	0, 1, 2, 0, 2, 3
+};
+
+int fontInit()
+{
+	screenSize = {SCREEN_WIDTH, SCREEN_HEIGHT};
+	scale = 1.0f;
+	size = { 8,8 };
+
+	texture.loadBitmapFile("font/sprite.bmp", 0, 64, 128);
+	glGenTextures(1, &texId);
+	glBindTexture(GL_TEXTURE_2D, texId);
+	glTexImage2D(
+		GL_TEXTURE_2D,		// GLenum target
+		0,					// GLint level
+		GL_RGBA,			// GLint internalformat
+		texture.getWidth(),	// GLsizei width
+		texture.getHeight(),// GLsizei height
+		0,					// GLint border
+		GL_RGBA,			// GLenum format
+		GL_UNSIGNED_BYTE,	// GLenum type
+		texture.getTexImage());	 // const GLvoid * pixels
+	glTexParameteri(
+		GL_TEXTURE_2D,			// GLenum target
+		GL_TEXTURE_MAG_FILTER,	// GLenum pname
+		GL_NEAREST);			// GLint param
+	glTexParameteri(
+		GL_TEXTURE_2D,			// GLenum target
+		GL_TEXTURE_MIN_FILTER,	// GLenum pname
+		GL_NEAREST);			// GLint param
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	return 0;
+}
+
+void fontRelease()
+{
+	texture.deleteTexImage();
+	glDeleteTextures(1, &texId); // GLsizei n, const GLuint *textures
+}
+
+void fontBegin()
+{
+	glGetIntegerv(
+		GL_MATRIX_MODE,		// GLenum pname
+		&lastMatrixMode);	// GLint *params
+
+	glPushAttrib(GL_ALL_ATTRIB_BITS);	//GLbitfield mask
+
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+
+	gluOrtho2D(
+		0, screenSize.x,
+		screenSize.y, 0);
+
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+
+	glDisable(GL_DEPTH_TEST);	//GLenum cap
+	glDisable(GL_LIGHTING);		//GLenum cap
+
+	// Enable texture
+	glEnable(GL_TEXTURE_2D);	// GLenum cap
+	glEnable(GL_BLEND);			// GLenum cap
+	glEnableClientState(GL_VERTEX_ARRAY);// GLenum array
+	glEnableClientState(GL_TEXTURE_COORD_ARRAY);// GLenum array
+	glBlendFunc(
+		GL_SRC_ALPHA,			//GLenum sfactor
+		GL_ONE_MINUS_SRC_ALPHA);//GLenum dfactor
+
+	glBindTexture(
+		GL_TEXTURE_2D,	// GLenum target
+		texId);			// GLuint texture
+}
+
+void fontEnd()
+{
+	glBindTexture(
+		GL_TEXTURE_2D,	// GLenum target
+		0);				// GLuint texture
+	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	glDisableClientState(GL_VERTEX_ARRAY);
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+
+	glMatrixMode(lastMatrixMode);
+
+	glPopAttrib();
+}
+
+void fontPosition(float _x, float _y)
+{
+	origin = position = { _x, _y };
+}
+
+void fontScale(float _scale)
+{
+	scale = _scale;
+}
+
+
+void fontDraw(const char* format, ...)
+{
+	va_list ap;
+	char str[256];
+	char* p;
+	vec2 pos = position;
+
+	va_start(ap, format);
+	vsprintf_s(str, format, ap);
+	va_end(ap);
+	
+	for (p = str; (*p != '\0') && (*p != '\n'); p++) {
+		int x = (*p % 16) * 8;
+		int y = (*p / 16) * 8;
+
+		float leftX = (float)x / (float)texture.getWidth();
+		float leftY = (float)y / (float)texture.getHeight();
+		float rightX = (float)(x + 8) / (float)texture.getWidth();
+		float rightY = (float)(y + 8) / (float)texture.getHeight();
+
+		vertex[0] = pos.x * scale;// Upper left x
+		vertex[1] = pos.y * scale;// Upper left y
+		vertex[2] = pos.x * scale;// Lower left x
+		vertex[3] = pos.y + size.y * scale;// Lower left y
+		vertex[4] = pos.x + size.x * scale;// Lower right x
+		vertex[5] = pos.y + size.y * scale;// Lower right y
+		vertex[6] = pos.x + size.x * scale;// Upper right x
+		vertex[7] = pos.y * scale;// Upper right y
+
+		texCoord[0] = leftX; // Upper left x
+		texCoord[1] = leftY; // Upper left y
+		texCoord[2] = leftX; // Lower left x
+		texCoord[3] = rightY;// Lower left y
+		texCoord[4] = rightX;// Lower right x
+		texCoord[5] = rightY;// Lower right y
+		texCoord[6] = rightX;// Upper right x
+		texCoord[7] = leftY; // Upper right y
+
+		glVertexPointer(
+			2,			// GLint size
+			GL_FLOAT,	// GLenum type
+			0,			// GLsizei stride
+			vertex);	// const GLvoid * pointer
+		glTexCoordPointer(
+			2,			// GLint size
+			GL_FLOAT,	// GLenum type
+			0,			// GLsizei stride
+			texCoord);	// const GLvoid * pointer
+		glDrawElements(
+			GL_TRIANGLES,		// GLenum mode
+			6,					// GLsizei count
+			GL_UNSIGNED_BYTE,	// GLenum type
+			indices);			// const GLvoid *indices
+
+		pos.x += 8;
+	}
+
+	if (*p == '\n') {
+		position.x = origin.x;
+		position.y += 8;
+		fontDraw(++p);
+	}
+}

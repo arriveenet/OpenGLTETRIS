@@ -1,27 +1,56 @@
 #include "MainScreen.h"
 
 #include "field.h"
+#include "font.h"
+#include "audio.h"
+#include "Wave.h"
+#include "Sound.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-void MainScreen::init()
+#include <gl/glut.h>
+#include <glm/glm.hpp>
+
+#include <random>
+
+using namespace glm;
+
+MainScreen::MainScreen()
+	: m_holdTetrimino(-1)
+	, m_lines(0)
+	, m_score(0)
 {
+	// m_bags init and shuffle
+	shuffleBags();
+
+	m_nowTetrimino = m_bags.back();
+	//m_nowTetrimino = TETRIMINO_SHAPE_I;
+	m_bags.pop_back();
+	m_nextTetrimino = m_bags.back();
+	m_bags.pop_back();
+
 	fieldInit();
 
-	for (int j = 0; j < TETRIMINO_SHAPE_MAX; j++)
-		tetriminos[j] = j;
-	shuffleTetriminos();
+	memcpy(m_field, defaultField, sizeof m_field);
 
 	initTetrimino();
+}
 
-	memcpy(field, defaultField, sizeof field);
+void MainScreen::init()
+{
+	tetriminoInit();
+
+	if (Sound::init() == 0) {
+		g_pSound->play(SOUND_TYPES_BGM);
+		g_pSound->loop(SOUND_TYPES_BGM, true);
+	}
 }
 
 void MainScreen::reset()
 {
-	memcpy(field, defaultField, sizeof field);
+	memcpy(m_field, defaultField, sizeof m_field);
 }
 
 void MainScreen::keyboard(unsigned char _key)
@@ -29,19 +58,41 @@ void MainScreen::keyboard(unsigned char _key)
 	TETRIMINO lastTetrimino = m_tetrimino;
 
 	switch (_key) {
-	case 'w':
-		break;
-	case 's':
+	case KEY_BIND_SOFT_DROP:
 		m_tetrimino.y++;
+		g_pSound->play(SOUND_TYPES_SE_SOFTDROP);
 		break;
-	case 'a':
+	case KEY_BIND_HARD_DROP:
+		hardDrop();
+		g_pSound->play(SOUND_TYPES_SE_HARDDROP);
+		break;
+	case KEY_BIND_MOVE_LEFT:
 		m_tetrimino.x--;
+		g_pSound->play(SOUND_TYPES_SE_MOVE);
 		break;
-	case 'd':
+	case KEY_BIND_MOVE_RIGHT:
 		m_tetrimino.x++;
+		g_pSound->play(SOUND_TYPES_SE_MOVE);
 		break;
-	case ' ':
+	case KEY_BIND_HOLD:
+		if (m_holdTetrimino >= 0) {
+			int temp = m_holdTetrimino;
+			m_holdTetrimino = m_nowTetrimino;
+			m_tetrimino.type = m_nowTetrimino = temp;
+			m_tetrimino.shape = tetriminoShapes[m_nowTetrimino];
+		} else {
+			m_holdTetrimino = m_tetrimino.type;
+			m_nowTetrimino = m_nextTetrimino;
+			m_nextTetrimino = m_bags.back();
+			m_bags.pop_back();
+			m_tetrimino.type = m_nowTetrimino;
+			m_tetrimino.shape = tetriminoShapes[m_nowTetrimino];
+		}
+		g_pSound->play(SOUND_TYPES_SE_HOLD);
+		break;
+	case KEY_BIND_ROTATE_RIGHT:
 		tetriminoRotate(&m_tetrimino);
+		g_pSound->play(SOUND_TYPES_SE_ROTATE);
 		break;
 	}
 
@@ -62,16 +113,19 @@ void MainScreen::tick()
 		for (int y = 0; y < TETRIMINO_HEIGHT_MAX; y++) {
 			for (int x = 0; x < TETRIMINO_WIDTH_MAX; x++) {
 				if (m_tetrimino.shape.pattern[y][x]) {
-					field[m_tetrimino.y + y][m_tetrimino.x + x] = m_tetrimino.type + 2;
+					m_field[m_tetrimino.y + y][m_tetrimino.x + x] = m_tetrimino.type + 2;
 				}
 			}
 		}
 
-		if (intersectField()) {
-			printf("GAME OVER\n");
-		}
-
 		eraseLine();
+
+		if (m_bags.empty())
+			shuffleBags();
+
+		m_nowTetrimino = m_nextTetrimino;
+		m_nextTetrimino = m_bags.back();
+		m_bags.pop_back();
 
 		initTetrimino();
 	}
@@ -84,42 +138,47 @@ void MainScreen::update()
 
 void MainScreen::draw()
 {
-	for (int y = 0; y < FIELD_HEIGHT; y++) {
-		for (int x = 0; x < FIELD_WIDTH; x++) {
-			//printf("%d", field[y][x]);
-		}
-		//printf("\n");
+	fieldDraw(m_field, &m_tetrimino);
+
+	tetriminoDraw(m_nextTetrimino, vec2(8 * 23, 8 * 8));
+	if (m_holdTetrimino >= 0)
+		tetriminoDraw(m_holdTetrimino, vec2(8 * 5, 8 * 8));
+
+	fontBegin();
+	{
+		glColor3ub(0xff, 0xff, 0xff);
+		fontPosition(8 * 4, 8 * 5);
+		fontDraw("HOLD");
+		fontPosition(8 * 4, 8 * 11);
+		fontDraw("LINES\n%4d",m_lines);
+		fontPosition(8 * 4, 8 * 15);
+		fontDraw("SCORE\n%5d", m_score);
+		fontPosition(8 * 23, 8 * 5);
+		fontDraw("NEXT");
 	}
-	//printf("field=%p\n", field);
-	fieldDraw(field, sizeof field, &m_tetrimino);
+	fontEnd();
 }
 
 void MainScreen::initTetrimino()
 {
-	if (turn > TETRIMINO_SHAPE_MAX) {
-		turn = 0;
-		shuffleTetriminos();
-	}
+	//printf("now=%d\n", nowTetrimino);
+	//printf("next=%d\n", nextTetrimino);
 
-	if (turn < TETRIMINO_SHAPE_MAX) {
-		//printf("turn=%d\n", turn);
-		int type = tetriminos[turn];
-		m_tetrimino.type = type;
-		m_tetrimino.shape = tetriminoShapes[type];
-		m_tetrimino.x = FIELD_WIDTH / 2 - m_tetrimino.shape.size / 2;
-		m_tetrimino.y = 0;
-	}
-	turn++;
+	m_tetrimino.type = m_nowTetrimino;
+	m_tetrimino.shape = tetriminoShapes[m_nowTetrimino];
+	m_tetrimino.x = FIELD_WIDTH / 2 - m_tetrimino.shape.size / 2;
+	m_tetrimino.y = 0;
 }
 
-void MainScreen::shuffleTetriminos()
+void MainScreen::shuffleBags()
 {
-	for (int i = 0; i < TETRIMINO_SHAPE_MAX; i++) {
-		int j = rand() % TETRIMINO_SHAPE_MAX;
-		int t = tetriminos[i];
-		tetriminos[i] = tetriminos[j];
-		tetriminos[j] = t;
-	}
+	// init m_bugs
+	for (int i = 0; i < TETRIMINO_SHAPE_MAX; i++)
+		m_bags.push_back(i);
+	// shuffle m_bugs
+	std::random_device seed_gen;
+	std::mt19937 engine(seed_gen());
+	std::shuffle(m_bags.begin(), m_bags.end(), engine);
 }
 
 bool MainScreen::intersectField()
@@ -133,7 +192,7 @@ bool MainScreen::intersectField()
 					|| (globalX >= FIELD_WIDTH)
 					|| (globalY < 0)
 					|| (globalY >= FIELD_HEIGHT)
-					|| (field[globalY][globalX] != BLOCK_NONE)
+					|| (m_field[globalY][globalX] != BLOCK_NONE)
 					) {
 					return true;
 				}
@@ -146,38 +205,91 @@ bool MainScreen::intersectField()
 
 void MainScreen::eraseLine()
 {
+	int lines = 0;
 	for (int y = 0; y < FIELD_HEIGHT; y++) {
 		bool completed = true;
 		for (int x = 0; x < FIELD_WIDTH; x++) {
-			if (field[y][x] == BLOCK_NONE) {
+			if (m_field[y][x] == BLOCK_NONE
+				|| (y >= FIELD_HEIGHT - 1)) {
 				completed = false;
 				break;
 			}
 		}
 		if (completed) {
 			for (int x = 0; x < FIELD_WIDTH; x++) {
-				if ((field[y][x] >= BLOCK_SOFT_I)
-					&& (field[y][x] <= BLOCK_SOFT_T)
+				if ((m_field[y][x] >= BLOCK_SOFT_I)
+					&& (m_field[y][x] <= BLOCK_SOFT_T)
 					) {
-					field[y][x] = BLOCK_NONE;
+					m_field[y][x] = BLOCK_NONE;
 				}
 			}
 
 			for (int x = 0; x < FIELD_WIDTH; x++) {
 				for (int y2 = y; y2 >= 0; y2--) {
-					if (field[y2][x] == BLOCK_HARD)
+					if (m_field[y2][x] == BLOCK_HARD)
 						break;
 
 					if (y2 == 0) {
-						field[y2][x] = BLOCK_NONE;
+						m_field[y2][x] = BLOCK_NONE;
 					} else {
-						if (field[y2 - 1][x] != BLOCK_HARD) {
-							field[y2][x] = field[y2 - 1][x];
+						if (m_field[y2 - 1][x] != BLOCK_HARD) {
+							m_field[y2][x] = m_field[y2 - 1][x];
 						}
 					}
 				}
 			}
+			m_lines++;
+			lines++;
+		}
+	}
 
+	if (lines == 1) {
+		g_pSound->play(SOUND_TYPES_SE_SINGLE);
+		m_score += 100;
+		printf("single\n");
+	} else if (lines == 2) {
+		g_pSound->play(SOUND_TYPES_SE_DOUBLE);
+		printf("double\n");
+		m_score += 300;
+	} else if (lines == 3) {
+		g_pSound->play(SOUND_TYPES_SE_TRIPLE);
+		printf("triple\n");
+		m_score += 500;
+	} else if(lines > 3) {
+		g_pSound->play(SOUND_TYPES_SE_TETRIS);
+		printf("tetris\n");
+		m_score += 800;
+	}
+}
+
+void MainScreen::hardDrop()
+{
+	while (true)
+	{
+		TETRIMINO lastTetrimino = m_tetrimino;
+		m_tetrimino.y++;
+
+		if (intersectField()) {
+			m_tetrimino = lastTetrimino;
+			for (int y = 0; y < TETRIMINO_HEIGHT_MAX; y++) {
+				for (int x = 0; x < TETRIMINO_WIDTH_MAX; x++) {
+					if (m_tetrimino.shape.pattern[y][x]) {
+						m_field[m_tetrimino.y + y][m_tetrimino.x + x] = m_tetrimino.type + 2;
+					}
+				}
+			}
+
+			eraseLine();
+
+			if (m_bags.empty())
+				shuffleBags();
+
+			m_nowTetrimino = m_nextTetrimino;
+			m_nextTetrimino = m_bags.back();
+			m_bags.pop_back();
+
+			initTetrimino();
+			return;
 		}
 	}
 }

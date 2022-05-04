@@ -1,9 +1,17 @@
 #include "Game.h"
 #include "MainScreen.h"
 
+#include <gl/glut.h>
+
 Game g_game;
 
 Game::Game()
+	:m_screen(0)
+	,m_pScreens()
+	,m_pCurrentScreen(NULL)
+{}
+
+void Game::init()
 {
 	m_pScreens[GAME_SCREEN_MAIN] = new MainScreen();
 

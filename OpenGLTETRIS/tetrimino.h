@@ -1,5 +1,8 @@
 #pragma once
 
+#include <gl/glut.h>
+#include <glm/glm.hpp>
+
 #define TETRIMINO_WIDTH_MAX		4
 #define TETRIMINO_HEIGHT_MAX	4
 
@@ -32,91 +35,11 @@ typedef struct {
 	TETRIMINOSHAPE shape;
 }TETRIMINO;
 
-const TETRIMINOSHAPE tetriminoShapes[TETRIMINO_SHAPE_MAX] =
-{
-	// TETRIMINO_SHAPE_I
-	{
-		4,
-		{
-			{0,1,0,0},
-			{0,1,0,0},
-			{0,1,0,0},
-			{0,1,0,0}
-		},
-		{0x00, 0xff, 0xff}
-	},
+extern const TETRIMINOSHAPE tetriminoShapes[TETRIMINO_SHAPE_MAX];
+extern GLuint g_tetriminoTexture;
 
-	// TETRIMINO_SHAPE_O
-	{
-		3,
-		{
-			{1,1,0,0},
-			{1,1,0,0},
-			{0,0,0,0},
-			{0,0,0,0}
-		},
-		{0xff, 0xff, 0x00}
-	},
-
-	// TETRIMINO_SHAPE_S
-	{
-		3,
-		{
-			{0,1,1,0},
-			{1,1,0,0},
-			{0,0,0,0},
-			{0,0,0,0}
-		},
-		{0x00, 0xff, 0x00}
-	},
-
-	// TETRIMINO_SHAPE_Z
-	{
-		3,
-		{
-			{1,1,0,0},
-			{0,1,1,0},
-			{0,0,0,0},
-			{0,0,0,0}
-		},
-		{0xff, 0x00, 0x00}
-	},
-
-	// TETRIMINO_SHAPE_J
-	{
-		3,
-		{
-			{1,0,0,0},
-			{1,1,1,0},
-			{0,0,0,0},
-			{0,0,0,0}
-		},
-		{0x00, 0x00, 0xff}
-	},
-
-	// TETRIMINO_SHAPE_L
-	{
-		3,
-		{
-			{0,0,1,0},
-			{1,1,1,0},
-			{0,0,0,0},
-			{0,0,0,0}
-		},
-		{0xff, 0x7c, 0x00}
-	},
-
-	// TETRIMINO_SHAPE_T
-	{
-		3,
-		{
-			{0,1,0,0},
-			{1,1,1,0},
-			{0,0,0,0},
-			{0,0,0,0}
-		},
-		{0x7c, 0x00, 0x7c}
-	},
-};
-
+void tetriminoInit();
 void tetriminoRotate(TETRIMINO* _tetrimino);
+void tetriminoDraw(int _shape,
+	const glm::vec2 &_position,
+	const glm::vec2 &_size = glm::vec2(8, 8));

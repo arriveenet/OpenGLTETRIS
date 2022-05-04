@@ -1,5 +1,6 @@
 #pragma once
 #include "Screen.h"
+#include "Texture.h"
 
 enum
 {
@@ -16,7 +17,7 @@ public:
 	Screen* m_pCurrentScreen;
 
 	Game();
-
+	void init();
 	void tick();
 	void update();
 	void setScreen(int _screen);

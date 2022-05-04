@@ -3,10 +3,21 @@
 #include "tetrimino.h"
 #include "field.h"
 
+#include <vector>
+
+#define KEY_BIND_HARD_DROP		0x20
+#define KEY_BIND_MOVE_LEFT		0x61
+#define KEY_BIND_HOLD			0x63
+#define KEY_BIND_MOVE_RIGHT		0x64
+#define KEY_BIND_SOFT_DROP		0x73
+#define KEY_BIND_ROTATE_RIGHT	0x77
+
+
 class MainScreen :
 	public Screen
 {
 public:
+	MainScreen();
 	virtual void init();
 	virtual void reset();
 	virtual void keyboard(unsigned char _key);
@@ -15,15 +26,20 @@ public:
 	virtual void draw();
 
 protected:
-	int turn;
-	int field[FIELD_HEIGHT][FIELD_WIDTH];
-	int tetriminos[TETRIMINO_SHAPE_MAX];
+	int m_nowTetrimino;
+	int m_nextTetrimino;
+	int m_holdTetrimino;
+	int m_field[FIELD_HEIGHT][FIELD_WIDTH];
+	unsigned int m_lines;
+	unsigned int m_score;
+	std::vector<int> m_bags;
 	TETRIMINO m_tetrimino;
 
 private:
 	void initTetrimino();
-	void shuffleTetriminos();
+	void shuffleBags();
 	bool intersectField();
 	void eraseLine();
+	void hardDrop();
 };
 

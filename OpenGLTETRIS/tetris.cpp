@@ -1,10 +1,17 @@
-#include <gl/glut.h>
-
 #include "tetris.h"
 #include "field.h"
+#include "font.h"
+#include "audio.h"
 #include "Rect.h"
+#include "Game.h"
 
+#include <time.h>
+#include <gl/glut.h>
 #include <glm/glm.hpp>
+
+bool g_keys[256];
+
+using namespace glm;
 
 void display()
 {
@@ -21,20 +28,47 @@ void display()
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
-	glEnableClientState(GL_VERTEX_ARRAY);
-	fieldDraw();
-
+	g_game.m_pCurrentScreen->draw();
 
 	glutSwapBuffers();
 }
 
 void idle()
 {
+	g_game.m_pCurrentScreen->update();
 
+	glutPostRedisplay();
+}
+
+void timer(int value)
+{
+	g_game.m_pCurrentScreen->tick();
+
+	//glutPostRedisplay();
+
+	glutTimerFunc(
+		1000 / 1,	// unsigned int time
+		timer,		// void (* callback)( int )
+		0);			// int value
+}
+
+void keyboard(unsigned char key, int x, int y)
+{
+	//printf("key=%#x\n", key);
+	g_keys[key] = true;
+	g_game.m_pCurrentScreen->keyboard(key);
+}
+
+void keyboardUp(unsigned char key, int x, int y)
+{
+	//printf("key=%#x\n", key);
+	g_keys[key] = false;
 }
 
 int main(int argc, char** argv)
 {
+	srand((unsigned int)time(NULL));
+
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE);
 	glutInitWindowSize(720, 480);
@@ -43,10 +77,16 @@ int main(int argc, char** argv)
 
 	glutDisplayFunc(display);
 	glutIdleFunc(idle);
+	glutKeyboardFunc(keyboard);
+	glutKeyboardUpFunc(keyboardUp);
+	glutTimerFunc(1000, timer, 0);
 
 	glClearColor(0, 0, 0, 1);
+	
+	fontInit();
+	audioInit();
 
-	fieldInit();
+	g_game.init();
 
 	glutMainLoop();
 }

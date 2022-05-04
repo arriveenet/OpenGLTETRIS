@@ -78,11 +78,13 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\FreeSoft\glm;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Program Files (x86)\OpenAL 1.1 SDK\include;C:\FreeSoft\glm;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Program Files (x86)\OpenAL 1.1 SDK\libs\Win64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\FreeSoft\glm;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Program Files (x86)\OpenAL 1.1 SDK\include;C:\FreeSoft\glm;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Program Files (x86)\OpenAL 1.1 SDK\libs\Win64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -141,14 +143,31 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="audio.cpp" />
     <ClCompile Include="field.cpp" />
+    <ClCompile Include="font.cpp" />
+    <ClCompile Include="Game.cpp" />
+    <ClCompile Include="MainScreen.cpp" />
     <ClCompile Include="Rect.cpp" />
+    <ClCompile Include="Sound.cpp" />
+    <ClCompile Include="tetrimino.cpp" />
     <ClCompile Include="tetris.cpp" />
+    <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="Wave.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="audio.h" />
     <ClInclude Include="field.h" />
+    <ClInclude Include="font.h" />
+    <ClInclude Include="Game.h" />
+    <ClInclude Include="MainScreen.h" />
     <ClInclude Include="Rect.h" />
+    <ClInclude Include="Screen.h" />
+    <ClInclude Include="Sound.h" />
+    <ClInclude Include="tetrimino.h" />
     <ClInclude Include="tetris.h" />
+    <ClInclude Include="Texture.h" />
+    <ClInclude Include="Wave.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -24,9 +24,9 @@ public:
 
 	static int init();
 	ALuint getSid(int _sound) const;
-	void play(SOUND_TYPES _sid);
-	void stop(SOUND_TYPES _sid);
-	void loop(SOUND_TYPES _sid, bool _loop);
+	void play(int _sid);
+	void stop(int _sid);
+	void loop(int _sid, bool _loop);
 
 private:
 	static ALuint m_bids[SOUND_TYPES_MAX];

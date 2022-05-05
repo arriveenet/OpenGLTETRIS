@@ -63,17 +63,17 @@ ALuint Sound::getSid(int _sound) const
 	return m_sids[_sound];
 }
 
-void Sound::play(SOUND_TYPES _sid)
+void Sound::play(int _sid)
 {
 	alSourcePlay(getSid(_sid));
 }
 
-void Sound::stop(SOUND_TYPES _sid)
+void Sound::stop(int _sid)
 {
 	alSourceStop(getSid(_sid));
 }
 
-void Sound::loop(SOUND_TYPES _sid, bool _loop)
+void Sound::loop(int _sid, bool _loop)
 {
 	alSourcei(
 		m_sids[_sid],					// ALuint sid

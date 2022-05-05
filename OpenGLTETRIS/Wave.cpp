@@ -144,6 +144,7 @@ bool Wave::deleteWaveFile()
 			fclose(m_wave->pFile);
 
 		m_wave = 0;
+		m_isWave = false;
 	} else {
 		result = false;
 	}

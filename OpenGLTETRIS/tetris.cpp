@@ -13,6 +13,12 @@ bool g_keys[256];
 
 using namespace glm;
 
+void release()
+{
+	audioRelease();
+	fontRelease();
+}
+
 void display()
 {
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -35,6 +41,11 @@ void display()
 
 void idle()
 {
+	if (g_keys[0x1b]) {
+		release();
+		exit(0);
+	}
+
 	g_game.m_pCurrentScreen->update();
 
 	glutPostRedisplay();
@@ -47,9 +58,9 @@ void timer(int value)
 	//glutPostRedisplay();
 
 	glutTimerFunc(
-		1000 / 1,	// unsigned int time
-		timer,		// void (* callback)( int )
-		0);			// int value
+		g_game.getTime(),	// unsigned int time
+		timer,				// void (* callback)( int )
+		0);					// int value
 }
 
 void keyboard(unsigned char key, int x, int y)

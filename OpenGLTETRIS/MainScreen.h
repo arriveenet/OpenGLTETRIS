@@ -34,12 +34,15 @@ protected:
 	unsigned int m_score;
 	std::vector<int> m_bags;
 	TETRIMINO m_tetrimino;
+	TETRIMINO m_shadowMino;
 
 private:
 	void initTetrimino();
 	void shuffleBags();
-	bool intersectField();
+	bool intersectField(const TETRIMINO& _tetrimino);
 	void eraseLine();
 	void hardDrop();
+	void shadowTetrimino();
+	glm::ivec2 getFallPosition();
 };
 

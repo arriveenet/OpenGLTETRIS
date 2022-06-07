@@ -16,6 +16,7 @@ enum {
 	BLOCK_SOFT_L,
 	BLOCK_SOFT_T,
 	BLOCK_FALL,
+	BLOCK_SHADOW,
 	BLOCK_MAX,
 };
 
@@ -23,6 +24,7 @@ int fieldInit();
 void fieldUpdate();
 void fieldDraw(
 	const int field[FIELD_HEIGHT][FIELD_WIDTH],
-	const TETRIMINO* tetrimino);
+	const TETRIMINO* tetrimino,
+	const TETRIMINO* shadowMino);
 
 extern int defaultField[FIELD_HEIGHT][FIELD_WIDTH];

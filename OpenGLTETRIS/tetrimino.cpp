@@ -168,3 +168,8 @@ void tetriminoDraw(int _shape, const glm::vec2& _position, const glm::vec2& _siz
 	glPopAttrib();
 	glPopClientAttrib();
 }
+
+TETRIMINOCOLOR tetriminoGetColor(int _shape)
+{
+	return tetriminoShapes->color;
+}

@@ -3,9 +3,9 @@
 #include <string.h>
 #include <gl/glut.h>
 
-using namespace glm;
+using glm::vec2;
 
-static const vec2 defalutTexCoord[4] =
+static constexpr glm::vec2 defalutTexCoord[4] =
 {
 	{0, 0},
 	{0, 1},
@@ -54,6 +54,11 @@ void Rect::setPosition(const vec2& _position)
 	m_vertex[3] = _position + vec2(m_size.x, 0);
 }
 
+void Rect::setTexCoord(const glm::vec2* _texCoord[4])
+{
+	memcpy(m_texCoord, _texCoord, sizeof _texCoord);
+}
+
 void Rect::draw()
 {
 	static GLubyte indices[] = { 0 , 1 , 2, 2, 3, 0};
@@ -69,7 +74,7 @@ void Rect::draw()
 		2,			// GLint size
 		GL_FLOAT,	// GLenum type
 		0,			// GLsizei stride
-		defalutTexCoord);	// const GLvoid * pointer
+		m_texCoord);	// const GLvoid * pointer
 
 	glDrawElements(
 		GL_TRIANGLES,		// GLenum mode

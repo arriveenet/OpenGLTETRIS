@@ -12,10 +12,10 @@
 
 using namespace glm;
 
-static const int lineVertexCount = FIELD_HEIGHT * FIELD_WIDTH * 2;
-static vec2 lineVertex[lineVertexCount];
-static vec2 position = { 80,8*5 };
-static Texture texture;
+static const int m_lineVertexCount = FIELD_HEIGHT * FIELD_WIDTH * 2;
+static vec2 m_lineVertex[m_lineVertexCount];
+static vec2 m_position = { 80,8*5 };
+static Texture m_texture;
 GLuint g_texId;
 
 int defaultField[FIELD_HEIGHT][FIELD_WIDTH] =
@@ -48,13 +48,13 @@ int fieldInit()
 {
 	int i = 0;
 	for (int x = 0; x <= FIELD_WIDTH; x++) {
-		lineVertex[i] = vec2(position.x + x * BLOCK_SIZE, position.y);
-		lineVertex[i+1] = vec2(position.x + x * BLOCK_SIZE, position.y + FIELD_HEIGHT * BLOCK_SIZE);
+		m_lineVertex[i] = vec2(m_position.x + x * BLOCK_SIZE, m_position.y);
+		m_lineVertex[i+1] = vec2(m_position.x + x * BLOCK_SIZE, m_position.y + FIELD_HEIGHT * BLOCK_SIZE);
 		i += 2;
 	}
 	for (int y = 0; y <= FIELD_HEIGHT; y++) {
-		lineVertex[i] = vec2(position.x + 0, position.y + y * BLOCK_SIZE);
-		lineVertex[i + 1] = vec2(position.x + FIELD_WIDTH * BLOCK_SIZE, position.y + y * BLOCK_SIZE);
+		m_lineVertex[i] = vec2(m_position.x + 0, m_position.y + y * BLOCK_SIZE);
+		m_lineVertex[i + 1] = vec2(m_position.x + FIELD_WIDTH * BLOCK_SIZE, m_position.y + y * BLOCK_SIZE);
 		i += 2;
 	}
 
@@ -68,7 +68,8 @@ void fieldUpdate()
 
 void fieldDraw(
 	const int field[FIELD_HEIGHT][FIELD_WIDTH],
-	const TETRIMINO* tetrimino)
+	const TETRIMINO* tetrimino,
+	const TETRIMINO* shadowMino)
 {
 	glPushClientAttrib(GL_CLIENT_ALL_ATTRIB_BITS);// GLbitfield mask
 	glPushAttrib(GL_ALL_ATTRIB_BITS);// GLbitfield mask
@@ -98,58 +99,63 @@ void fieldDraw(
 
 	for (int y = 0; y < TETRIMINO_HEIGHT_MAX; y++)
 		for (int x = 0; x < TETRIMINO_WIDTH_MAX; x++) {
-			if (tetrimino->shape.pattern[y][x]) {
+			if (tetrimino->shape.pattern[y][x])
 				screen[tetrimino->y + y][tetrimino->x + x] = BLOCK_FALL;
-			}
+
+			if (shadowMino->shape.pattern[y][x])
+				screen[shadowMino->y + y][shadowMino->x + x] = BLOCK_SHADOW;
 		}
 
 	for (int y = 0; y < FIELD_HEIGHT; y++) {
 		for (int x = 0; x < FIELD_WIDTH; x++) {
-			//printf("%d", m_field[y][x]);
+			//printf("%d", field[y][x]);
 			switch (screen[y][x]) {
 			case BLOCK_NONE:
 				break;
 			case BLOCK_HARD:
-				glColor3ub(0x7c, 0x7c, 0x7c);
-				rect.setPosition(vec2(x * BLOCK_SIZE + position.x, y * BLOCK_SIZE + position.y));
+				glColor3ub(0x80, 0x80, 0x80);
 				break;
 			case BLOCK_SOFT_I:
 				glColor3ub(0x00, 0xff, 0xff);
-				rect.setPosition(vec2(x * BLOCK_SIZE + position.x, y * BLOCK_SIZE + position.y));
 				break;
 			case BLOCK_SOFT_O:
 				glColor3ub(0xff, 0xff, 0x00);
-				rect.setPosition(vec2(x * BLOCK_SIZE + position.x, y * BLOCK_SIZE + position.y));
 				break;
 			case BLOCK_SOFT_S:
 				glColor3ub(0x00, 0xff, 0x00);
-				rect.setPosition(vec2(x * BLOCK_SIZE + position.x, y * BLOCK_SIZE + position.y));
 				break;
 			case BLOCK_SOFT_Z:
 				glColor3ub(0xff, 0x00, 0x00);
-				rect.setPosition(vec2(x * BLOCK_SIZE + position.x, y * BLOCK_SIZE + position.y));
 				break;
 			case BLOCK_SOFT_J:
 				glColor3ub(0x00, 0x00, 0xff);
-				rect.setPosition(vec2(x * BLOCK_SIZE + position.x, y * BLOCK_SIZE + position.y));
 				break;
 			case BLOCK_SOFT_L:
-				glColor3ub(0xff, 0x7c, 0x00);
-				rect.setPosition(vec2(x * BLOCK_SIZE + position.x, y * BLOCK_SIZE + position.y));
+				glColor3ub(0xff, 0x80, 0x00);
 				break;
 			case BLOCK_SOFT_T:
-				glColor3ub(0x7c, 0x00, 0x7c);
-				rect.setPosition(vec2(x * BLOCK_SIZE + position.x, y * BLOCK_SIZE + position.y));
+				glColor3ub(0x7c, 0x00, 0x80);
 				break;
 			case BLOCK_FALL:
 				glColor3ub(
 					tetrimino->shape.color.r,
 					tetrimino->shape.color.g,
 					tetrimino->shape.color.b);
-				rect.setPosition(vec2(x * BLOCK_SIZE + position.x, y * BLOCK_SIZE + position.y));
+				break;
+			case BLOCK_SHADOW:
+				glColor4ub(
+					tetrimino->shape.color.r,
+					tetrimino->shape.color.g,
+					tetrimino->shape.color.b,
+					0x40);
 				break;
 			}
-			rect.draw();
+			if (screen[y][x] != BLOCK_NONE) {
+				rect.setPosition(
+					vec2(x * BLOCK_SIZE + m_position.x,
+						y * BLOCK_SIZE + m_position.y));
+				rect.draw();
+			}
 		}
 		//putchar('\n');
 	}

@@ -11,7 +11,7 @@
 using namespace glm;
 
 // Font texture
-static Texture texture;
+static Texture m_texture;
 static GLuint texId;
 
 // Font Internal variables
@@ -19,7 +19,7 @@ static GLint lastMatrixMode;
 static ivec2 screenSize;
 static vec2 size;
 static float scale;
-static vec2 position;
+static vec2 m_position;
 static vec2 origin;
 
 static GLfloat vertex[8];
@@ -35,19 +35,19 @@ int fontInit()
 	scale = 1.0f;
 	size = { 8,8 };
 
-	texture.loadBitmapFile("font/sprite.bmp", 0, 64, 128);
+	m_texture.loadBitmapFile("font/sprite.bmp", 0, 64, 128);
 	glGenTextures(1, &texId);
 	glBindTexture(GL_TEXTURE_2D, texId);
 	glTexImage2D(
 		GL_TEXTURE_2D,		// GLenum target
 		0,					// GLint level
 		GL_RGBA,			// GLint internalformat
-		texture.getWidth(),	// GLsizei width
-		texture.getHeight(),// GLsizei height
+		m_texture.getWidth(),	// GLsizei width
+		m_texture.getHeight(),// GLsizei height
 		0,					// GLint border
 		GL_RGBA,			// GLenum format
 		GL_UNSIGNED_BYTE,	// GLenum type
-		texture.getTexImage());	 // const GLvoid * pixels
+		m_texture.getTexImage());	 // const GLvoid * pixels
 	glTexParameteri(
 		GL_TEXTURE_2D,			// GLenum target
 		GL_TEXTURE_MAG_FILTER,	// GLenum pname
@@ -63,7 +63,7 @@ int fontInit()
 
 void fontRelease()
 {
-	texture.deleteTexImage();
+	m_texture.deleteTexImage();
 	glDeleteTextures(1, &texId); // GLsizei n, const GLuint *textures
 }
 
@@ -124,7 +124,7 @@ void fontEnd()
 
 void fontPosition(float _x, float _y)
 {
-	origin = position = { _x, _y };
+	origin = m_position = { _x, _y };
 }
 
 void fontScale(float _scale)
@@ -138,7 +138,7 @@ void fontDraw(const char* format, ...)
 	va_list ap;
 	char str[256];
 	char* p;
-	vec2 pos = position;
+	vec2 pos = m_position;
 
 	va_start(ap, format);
 	vsprintf_s(str, format, ap);
@@ -148,10 +148,10 @@ void fontDraw(const char* format, ...)
 		int x = (*p % 16) * 8;
 		int y = (*p / 16) * 8;
 
-		float leftX = (float)x / (float)texture.getWidth();
-		float leftY = (float)y / (float)texture.getHeight();
-		float rightX = (float)(x + 8) / (float)texture.getWidth();
-		float rightY = (float)(y + 8) / (float)texture.getHeight();
+		float leftX = (float)x / (float)m_texture.getWidth();
+		float leftY = (float)y / (float)m_texture.getHeight();
+		float rightX = (float)(x + 8) / (float)m_texture.getWidth();
+		float rightY = (float)(y + 8) / (float)m_texture.getHeight();
 
 		vertex[0] = pos.x * scale;// Upper left x
 		vertex[1] = pos.y * scale;// Upper left y
@@ -191,8 +191,8 @@ void fontDraw(const char* format, ...)
 	}
 
 	if (*p == '\n') {
-		position.x = origin.x;
-		position.y += 8;
+		m_position.x = origin.x;
+		m_position.y += 8;
 		fontDraw(++p);
 	}
 }

@@ -6,7 +6,7 @@
 #define TETRIMINO_WIDTH_MAX		4
 #define TETRIMINO_HEIGHT_MAX	4
 
-enum {
+enum TETRIMINO_SHAPE {
 	TETRIMINO_SHAPE_I,
 	TETRIMINO_SHAPE_O,
 	TETRIMINO_SHAPE_S,
@@ -43,3 +43,4 @@ void tetriminoRotate(TETRIMINO* _tetrimino);
 void tetriminoDraw(int _shape,
 	const glm::vec2 &_position,
 	const glm::vec2 &_size = glm::vec2(8, 8));
+TETRIMINOCOLOR tetriminoGetColor(int _shape);

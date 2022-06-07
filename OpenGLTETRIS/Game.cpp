@@ -6,9 +6,10 @@
 Game g_game;
 
 Game::Game()
-	:m_screen(0)
-	,m_pScreens()
-	,m_pCurrentScreen(NULL)
+	: m_screen(0)
+	, m_pScreens()
+	, m_pCurrentScreen(NULL)
+	, m_time(1000/1)
 {}
 
 void Game::init()
@@ -37,4 +38,9 @@ void Game::setScreen(int _screen)
 {
 	m_pCurrentScreen = m_pScreens[m_screen = _screen];
 	m_pCurrentScreen->reset();
+}
+
+void Game::setTime(unsigned int _time)
+{
+	m_time = _time;
 }

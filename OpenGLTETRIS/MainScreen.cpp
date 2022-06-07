@@ -5,6 +5,7 @@
 #include "audio.h"
 #include "Wave.h"
 #include "Sound.h"
+#include "Game.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,6 +37,7 @@ MainScreen::MainScreen()
 	memcpy(m_field, defaultField, sizeof m_field);
 
 	initTetrimino();
+	shadowTetrimino();
 }
 
 void MainScreen::init()
@@ -96,9 +98,11 @@ void MainScreen::keyboard(unsigned char _key)
 		break;
 	}
 
-	if (intersectField()) {
+	if (intersectField(m_tetrimino)) {
 		m_tetrimino = lastTetrimino;
 	}
+
+	shadowTetrimino();
 }
 
 void MainScreen::tick()
@@ -107,7 +111,7 @@ void MainScreen::tick()
 
 	m_tetrimino.y++;
 
-	if (intersectField()) {
+	if (intersectField(m_tetrimino)) {
 		m_tetrimino = lastTetrimino;
 
 		for (int y = 0; y < TETRIMINO_HEIGHT_MAX; y++) {
@@ -128,33 +132,45 @@ void MainScreen::tick()
 		m_bags.pop_back();
 
 		initTetrimino();
+		shadowTetrimino();
 	}
 }
 
 void MainScreen::update()
 {
-
 }
 
 void MainScreen::draw()
 {
-	fieldDraw(m_field, &m_tetrimino);
+	fieldDraw(m_field, &m_tetrimino, &m_shadowMino);
 
-	tetriminoDraw(m_nextTetrimino, vec2(8 * 23, 8 * 8));
+	tetriminoDraw(m_nextTetrimino, vec2(8 * 24, 8 * 7));
 	if (m_holdTetrimino >= 0)
-		tetriminoDraw(m_holdTetrimino, vec2(8 * 5, 8 * 8));
+		tetriminoDraw(m_holdTetrimino, vec2(8 * 4, 8 * 7));
 
 	fontBegin();
 	{
 		glColor3ub(0xff, 0xff, 0xff);
-		fontPosition(8 * 4, 8 * 5);
-		fontDraw("HOLD");
-		fontPosition(8 * 4, 8 * 11);
-		fontDraw("LINES\n%4d",m_lines);
-		fontPosition(8 * 4, 8 * 15);
-		fontDraw("SCORE\n%5d", m_score);
+		fontPosition(8 * 3, 8 * 5);
+		fontDraw("aHOLDbc\n"
+				 "g     h\n"
+				 "g     h\n"
+				 "g     h\n"
+				 "deeeeef");
+		fontPosition(8 * 3, 8 * 11);
+		fontDraw("aLINESc\n"
+				 "g%5dh\n"
+				 "deeeeef", m_lines);
+		fontPosition(8 * 3, 8 * 15);
+		fontDraw("aSCOREc\n"
+				 "g%5dh\n"
+				 "deeeeef", m_score);
 		fontPosition(8 * 23, 8 * 5);
-		fontDraw("NEXT");
+		fontDraw("aNEXTc\n"
+				 "g    h\n"
+				 "g    h\n"
+				 "g    h\n"
+				 "deeeef");
 	}
 	fontEnd();
 }
@@ -181,13 +197,13 @@ void MainScreen::shuffleBags()
 	std::shuffle(m_bags.begin(), m_bags.end(), engine);
 }
 
-bool MainScreen::intersectField()
+bool MainScreen::intersectField(const TETRIMINO& _tetrimino)
 {
-	for (int y = 0; y < m_tetrimino.shape.size; y++) {
-		for (int x = 0; x < m_tetrimino.shape.size; x++) {
-			if (m_tetrimino.shape.pattern[y][x]) {
-				int globalX = m_tetrimino.x + x;
-				int globalY = m_tetrimino.y + y;
+	for (int y = 0; y < _tetrimino.shape.size; y++) {
+		for (int x = 0; x < _tetrimino.shape.size; x++) {
+			if (_tetrimino.shape.pattern[y][x]) {
+				int globalX = _tetrimino.x + x;
+				int globalY = _tetrimino.y + y;
 				if ((globalX < 0)
 					|| (globalX >= FIELD_WIDTH)
 					|| (globalY < 0)
@@ -264,32 +280,58 @@ void MainScreen::eraseLine()
 
 void MainScreen::hardDrop()
 {
-	while (true)
-	{
-		TETRIMINO lastTetrimino = m_tetrimino;
-		m_tetrimino.y++;
 
-		if (intersectField()) {
-			m_tetrimino = lastTetrimino;
-			for (int y = 0; y < TETRIMINO_HEIGHT_MAX; y++) {
-				for (int x = 0; x < TETRIMINO_WIDTH_MAX; x++) {
-					if (m_tetrimino.shape.pattern[y][x]) {
-						m_field[m_tetrimino.y + y][m_tetrimino.x + x] = m_tetrimino.type + 2;
-					}
-				}
+	ivec2 fallPos = getFallPosition();
+	//printf("fallPos: %d, %d\n", fallPos.x, fallPos.y);
+	m_tetrimino.x = fallPos.x;
+	m_tetrimino.y = fallPos.y;
+
+	for (int y = 0; y < TETRIMINO_HEIGHT_MAX; y++) {
+		for (int x = 0; x < TETRIMINO_WIDTH_MAX; x++) {
+			if (m_tetrimino.shape.pattern[y][x]) {
+				m_field[m_tetrimino.y + y][m_tetrimino.x + x] = m_tetrimino.type + 2;
 			}
-
-			eraseLine();
-
-			if (m_bags.empty())
-				shuffleBags();
-
-			m_nowTetrimino = m_nextTetrimino;
-			m_nextTetrimino = m_bags.back();
-			m_bags.pop_back();
-
-			initTetrimino();
-			return;
 		}
 	}
+
+	eraseLine();
+
+	if (m_bags.empty())
+		shuffleBags();
+
+	m_nowTetrimino = m_nextTetrimino;
+	m_nextTetrimino = m_bags.back();
+	m_bags.pop_back();
+
+	initTetrimino();
+}
+
+void MainScreen::shadowTetrimino()
+{
+	ivec2 fallPos = getFallPosition();
+	m_shadowMino = m_tetrimino;
+	m_shadowMino.x = fallPos.x;
+	m_shadowMino.y = fallPos.y;
+}
+
+ivec2 MainScreen::getFallPosition()
+{
+	TETRIMINO tetrimino = m_tetrimino, lastTetrimino;
+	int y = 0;
+	ivec2 result = ivec2(0);
+
+	while (true)
+	{
+		lastTetrimino = tetrimino;
+		tetrimino.y++;
+
+		if (intersectField(tetrimino)) {
+
+			result.x = lastTetrimino.x;
+			result.y = lastTetrimino.y;
+			break;
+		}
+	}
+
+	return result;
 }
